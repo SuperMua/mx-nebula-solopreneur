@@ -20,15 +20,14 @@ const tabs = [
   { key: 'related', label: '相关 Agent' },
 ]
 
-// Handle head metadata
 useHead({
   title: agent.value ? `${agent.value.emoji || ''} ${agent.value.name} - MX-星云` : 'Agent 详情',
 })
 
+// Copy prompt
 async function copyPrompt() {
   if (agent.value?.contentMd) {
     await navigator.clipboard.writeText(agent.value.contentMd)
-    // Track copy
     $fetch(`/api/v1/agents/${slug.value}/copy`, { method: 'POST' }).catch(() => {})
   }
 }
@@ -38,6 +37,34 @@ function onCopy() {
   copyPrompt()
   copied.value = true
   setTimeout(() => { copied.value = false }, 2000)
+}
+
+// Favorites
+const { isLoggedIn } = useAuth()
+const favoriting = ref(false)
+const isFavorited = ref(false)
+const favError = ref('')
+
+async function toggleFavorite() {
+  if (!isLoggedIn.value) {
+    await navigateTo('/login')
+    return
+  }
+  favError.value = ''
+  favoriting.value = true
+  try {
+    if (isFavorited.value) {
+      await $fetch(`/api/v1/favorites/${slug.value}`, { method: 'DELETE' })
+      isFavorited.value = false
+    } else {
+      await $fetch('/api/v1/favorites', { method: 'POST', body: { agentSlug: slug.value } })
+      isFavorited.value = true
+    }
+  } catch (err: any) {
+    favError.value = err.data?.message || '操作失败'
+  } finally {
+    favoriting.value = false
+  }
 }
 </script>
 
@@ -217,7 +244,14 @@ curl -o {{ agent.slug }}.md {{ 'https://raw.githubusercontent.com/jnMetaCode/age
           <button @click="onCopy" class="btn-gradient">
             {{ copied ? '✅ 已复制' : '📋 一键复制 Prompt' }}
           </button>
-          <button class="px-5 py-3 rounded-xl border border-ink-muted/20 text-ink-heading font-medium hover:bg-white/60 hover:shadow-card transition-all duration-200">⭐ 收藏</button>
+          <button
+            @click="toggleFavorite"
+            :disabled="favoriting"
+            class="px-5 py-3 rounded-xl border border-ink-muted/20 font-medium hover:bg-white/60 hover:shadow-card transition-all duration-200 disabled:opacity-60"
+            :class="isFavorited ? 'text-amber-500 border-amber-300 bg-amber-50' : 'text-ink-heading'"
+          >
+            {{ favoriting ? '...' : isFavorited ? '⭐ 已收藏' : '☆ 收藏' }}
+          </button>
           <button class="px-5 py-3 rounded-xl border border-ink-muted/20 text-ink-heading font-medium hover:bg-white/60 hover:shadow-card transition-all duration-200">🔗 分享</button>
         </div>
       </div>

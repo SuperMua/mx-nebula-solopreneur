@@ -88,11 +88,26 @@ onConnect((connection) => {
 })
 
 // Save workflow
+let saveError = ref('')
+
 async function saveWorkflow() {
-  if (!workflowName.value.trim()) return
-  isSaving.value = true
+  saveError.value = ''
+  if (!workflowName.value.trim()) {
+    saveError.value = '请输入工作流名称'
+    return
+  }
 
   const dag = toObject()
+
+  // Validate DAG
+  const { validateDAG } = await import('~/server/utils/dag')
+  const validation = validateDAG(dag.nodes, dag.edges)
+  if (!validation.valid) {
+    saveError.value = validation.message || '工作流配置无效'
+    return
+  }
+
+  isSaving.value = true
   const payload = {
     name: workflowName.value,
     description: workflowDescription.value,
@@ -152,6 +167,7 @@ useHead({ title: `${workflowName.value} - 工作流编辑器` })
             class="font-semibold text-ink-heading bg-transparent border-none outline-none text-sm w-48"
             placeholder="工作流名称"
           />
+          <span v-if="saveError" class="text-xs text-red-500 bg-red-50 px-2 py-1 rounded-lg">{{ saveError }}</span>
         </div>
         <div class="flex items-center gap-2">
           <button
