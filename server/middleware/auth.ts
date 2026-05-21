@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const path = event.path
 
   if (publicPaths.some(p => path.startsWith(p))) return
-  if (path.startsWith('/api/v1/agents') && event.method === 'GET') return
+  if (path.startsWith('/api/v1/agents') && (event.method === 'GET' || path.includes('/copy'))) return
   if (path.startsWith('/api/v1/departments')) return
   if (path.startsWith('/api/v1/tools')) return
   if (path.startsWith('/api/v1/webhooks')) return

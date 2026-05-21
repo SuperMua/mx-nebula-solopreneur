@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
   }).from(reviews).where(eq(reviews.agentId, agentId))
 
   await db.update(agents).set({
-    avgRating: agg[0].avg.toFixed(2),
+    avgRating: Number(agg[0].avg).toFixed(2),
     ratingCount: agg[0].count,
   }).where(eq(agents.id, agentId))
 
