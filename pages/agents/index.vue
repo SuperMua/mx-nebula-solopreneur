@@ -38,7 +38,7 @@ const { data: agentData, pending, error, refresh } = await useAsyncData(
         page: page.value,
         limit,
       },
-    }),
+    }).catch(() => ({ success: true, data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } })),
   { watch: [debouncedSearch, selectedDept, selectedTool, selectedSource, selectedSort, page] }
 )
 

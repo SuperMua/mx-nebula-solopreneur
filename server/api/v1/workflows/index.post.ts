@@ -13,9 +13,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const dag = parsed.data.dagJson
-  const validation = validateDAG(dag.nodes || [], dag.edges || [])
-  if (!validation.valid) {
-    throw createError({ statusCode: 400, message: validation.message || '工作流配置无效' })
+  // Only validate if there are nodes (allow empty canvas for new workflows)
+  if ((dag.nodes || []).length > 0) {
+    const validation = validateDAG(dag.nodes || [], dag.edges || [])
+    if (!validation.valid) {
+      throw createError({ statusCode: 400, message: validation.message || '工作流配置无效' })
+    }
   }
 
   const [wf] = await db.insert(workflows).values({

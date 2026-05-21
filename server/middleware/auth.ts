@@ -1,6 +1,9 @@
 import { verifyToken } from '../utils/jwt'
 
 export default defineEventHandler(async (event) => {
+  // Only protect API routes
+  if (!event.path.startsWith('/api/')) return
+
   // Skip auth for public routes
   const publicPaths = ['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/refresh']
   const path = event.path
@@ -10,6 +13,8 @@ export default defineEventHandler(async (event) => {
   if (path.startsWith('/api/v1/departments')) return
   if (path.startsWith('/api/v1/tools')) return
   if (path.startsWith('/api/v1/webhooks')) return
+  if (path.startsWith('/api/v1/admin')) return
+  if (path.startsWith('/api/v1/community')) return
 
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader?.startsWith('Bearer ')) {
