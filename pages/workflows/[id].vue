@@ -124,9 +124,64 @@ async function saveWorkflow() {
       await $fetch(`/api/v1/workflows/${workflowId.value}`, { method: 'PUT', body: payload })
     }
   } catch (err: any) {
-    console.error('Save failed:', err)
+    saveError.value = err.data?.message || '保存失败'
   } finally {
     isSaving.value = false
+  }
+}
+
+// Execute workflow
+const isExecuting = ref(false)
+const executionId = ref<string | null>(null)
+const executionStatus = ref('')
+
+async function executeWorkflow() {
+  if (isNew.value) {
+    saveError.value = '请先保存工作流'
+    return
+  }
+  isExecuting.value = true
+  executionStatus.value = '正在启动...'
+  try {
+    const res = await $fetch(`/api/v1/workflows/${workflowId.value}/execute`, { method: 'POST' })
+    const execId = (res as any).data.executionId
+    executionId.value = execId
+    await pollExecution(execId)
+  } catch (err: any) {
+    saveError.value = err.data?.message || '执行失败'
+    executionStatus.value = '执行失败'
+  } finally {
+    isExecuting.value = false
+  }
+}
+
+async function pollExecution(execId: string) {
+  const eventSource = new EventSource(`/api/v1/executions/${execId}/stream`)
+  eventSource.onmessage = (msg) => {
+    if (msg.data === '[DONE]') {
+      eventSource.close()
+      executionStatus.value = '执行完成'
+      return
+    }
+    try {
+      const parsed = JSON.parse(msg.data)
+      executionStatus.value = `状态: ${parsed.status}`
+      // Update node statuses
+      if (parsed.nodes) {
+        for (const n of parsed.nodes) {
+          const node = nodes.value.find(node => node.id === n.nodeId)
+          if (node) {
+            node.data.status = n.status
+          }
+        }
+      }
+    } catch {}
+  }
+  eventSource.onerror = () => {
+    eventSource.close()
+    if (executionStatus.value !== '执行完成') {
+      executionStatus.value = '连接中断'
+    }
   }
 }
 
@@ -181,6 +236,14 @@ useHead({ title: `${workflowName.value} - 工作流编辑器` })
             class="px-3 py-1.5 text-xs rounded-lg border border-ink-muted/20 text-ink-body hover:bg-white/60 transition-colors"
           >
             适配视图
+          </button>
+          <button
+            @click="executeWorkflow"
+            :disabled="isExecuting || isNew"
+            class="px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
+            :class="isExecuting ? 'bg-amber-100 text-amber-600' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'"
+          >
+            {{ isExecuting ? executionStatus || '执行中...' : '▶ 运行' }}
           </button>
           <button
             @click="saveWorkflow"
