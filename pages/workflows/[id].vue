@@ -5,6 +5,7 @@ import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 import AgentNode from '~/components/workflow/AgentNode.vue'
 import AgentSelector from '~/components/workflow/AgentSelector.vue'
+import NodeConfigPanel from '~/components/workflow/NodeConfigPanel.vue'
 
 definePageMeta({ middleware: ['auth'] })
 
@@ -87,8 +88,7 @@ onConnect((connection) => {
   }])
 })
 
-// Save workflow
-let saveError = ref('')
+const saveError = ref('')
 
 async function saveWorkflow() {
   saveError.value = ''
@@ -230,7 +230,14 @@ useHead({ title: `${workflowName.value} - 工作流编辑器` })
     </div>
 
     <!-- Sidebar -->
-    <AgentSelector v-if="showSidebar" class="w-72 shrink-0" />
+    <NodeConfigPanel
+      v-if="showSidebar && selectedNode"
+      :node="selectedNode"
+      class="w-72 shrink-0"
+      @close="selectedNode = null"
+      @update="(nodeId, data) => { const n = nodes.find(n => n.id === nodeId); if (n) n.data = data }"
+    />
+    <AgentSelector v-else-if="showSidebar" class="w-72 shrink-0" />
   </div>
 </template>
 
