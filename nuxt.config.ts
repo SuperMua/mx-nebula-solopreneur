@@ -1,7 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
-  devtools: { enabled: true },
+
+  // Disable devtools to avoid auth prompt blocking the page in dev
+  devtools: { enabled: false },
 
   modules: [
     '@pinia/nuxt',
@@ -28,7 +30,6 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // Server-side only
     databaseUrl: process.env.DATABASE_URL,
     redisUrl: process.env.REDIS_URL,
     jwtSecret: process.env.JWT_SECRET,
@@ -36,7 +37,6 @@ export default defineNuxtConfig({
     githubToken: process.env.GITHUB_TOKEN,
     resendApiKey: process.env.RESEND_API_KEY,
 
-    // Public
     public: {
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
       appUrl: process.env.APP_URL || 'http://localhost:3000',

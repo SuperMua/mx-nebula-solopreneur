@@ -13,13 +13,13 @@ const route = useRoute()
 const workflowId = computed(() => route.params.id as string)
 const isNew = computed(() => workflowId.value === 'new')
 
-const { nodes, edges, addNodes, addEdges, onConnect, onNodeClick, fitView, toObject } = useVueFlow({
-  defaultEdgeOptions: {
-    type: 'smoothstep',
-    animated: true,
-    style: { stroke: '#7C3AED', strokeWidth: 2 },
-  },
-})
+const { nodes, edges, addNodes, addEdges, onConnect, onNodeClick, fitView, toObject } = useVueFlow('workflow-editor')
+
+const defaultEdgeOptions = {
+  type: 'smoothstep',
+  animated: true,
+  style: { stroke: '#7C3AED', strokeWidth: 2 },
+}
 
 // State
 const workflowName = ref('新工作流')
@@ -78,14 +78,9 @@ onNodeClick(({ node }) => {
   selectedNode.value = node
 })
 
-// Connect handler
+// Connect handler — defaultEdgeOptions are handled by the VueFlow component
 onConnect((connection) => {
-  addEdges([{
-    ...connection,
-    type: 'smoothstep',
-    animated: true,
-    style: { stroke: '#7C3AED', strokeWidth: 2 },
-  }])
+  addEdges([connection])
 })
 
 const saveError = ref('')
@@ -261,6 +256,7 @@ useHead({ title: `${workflowName.value} - 工作流编辑器` })
           v-model:nodes="nodes"
           v-model:edges="edges"
           :node-types="{ agent: AgentNode }"
+          :default-edge-options="defaultEdgeOptions"
           :default-viewport="{ zoom: 1, x: 0, y: 0 }"
           :min-zoom="0.2"
           :max-zoom="2"
