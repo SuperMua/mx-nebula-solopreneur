@@ -10,7 +10,7 @@ const emit = defineEmits<{
   update: [nodeId: string, data: Record<string, any>]
 }>()
 
-const { removeNodes } = useVueFlow()
+const { removeNodes } = useVueFlow('workflow-editor')
 
 const label = ref(props.node.data?.label || '')
 const description = ref(props.node.data?.description || '')

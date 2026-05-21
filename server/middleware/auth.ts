@@ -15,6 +15,8 @@ export default defineEventHandler(async (event) => {
   if (path.startsWith('/api/v1/webhooks')) return
   if (path.startsWith('/api/v1/admin')) return
   if (path.startsWith('/api/v1/community')) return
+  // Stream endpoints use query-parameter token (EventSource has no custom headers)
+  if (path.includes('/stream')) return
 
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader?.startsWith('Bearer ')) {

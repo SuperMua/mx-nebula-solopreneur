@@ -1,9 +1,21 @@
 import db from '~/server/utils/db'
 import { workflowExecutions, workflowNodeExecutions } from '~/server/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { verifyToken } from '~/server/utils/jwt'
 
 export default defineEventHandler(async (event) => {
-  const { userId } = event.context.user
+  // Auth via query token (EventSource doesn't support custom headers)
+  const token = getQuery(event).token as string | undefined
+  if (!token) throw createError({ statusCode: 401, message: 'Unauthorized' })
+
+  let userId: string
+  try {
+    const payload = await verifyToken(token) as { userId: string }
+    userId = payload.userId
+  } catch {
+    throw createError({ statusCode: 401, message: 'Invalid or expired token' })
+  }
+
   const executionId = getRouterParam(event, 'executionId')
   if (!executionId) throw createError({ statusCode: 400 })
 
@@ -16,12 +28,10 @@ export default defineEventHandler(async (event) => {
   let lastStatus = ''
   let closed = false
 
-  // Handle client disconnect
   event.node.req.on('close', () => {
     closed = true
   })
 
-  // Poll for status changes every second
   while (!closed) {
     const [exec] = await db.select({
       status: workflowExecutions.status,

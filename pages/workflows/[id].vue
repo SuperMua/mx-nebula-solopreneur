@@ -12,6 +12,7 @@ definePageMeta({ middleware: ['auth'] })
 const route = useRoute()
 const workflowId = computed(() => route.params.id as string)
 const isNew = computed(() => workflowId.value === 'new')
+const { api } = useApi()
 
 const { nodes, edges, addNodes, addEdges, onConnect, onNodeClick, fitView, toObject } = useVueFlow('workflow-editor')
 
@@ -112,11 +113,11 @@ async function saveWorkflow() {
 
   try {
     if (isNew.value) {
-      const res = await $fetch('/api/v1/workflows', { method: 'POST', body: payload })
+      const res = await api('/api/v1/workflows', { method: 'POST', body: payload })
       const id = (res as any).data.id
       await navigateTo(`/workflows/${id}`)
     } else {
-      await $fetch(`/api/v1/workflows/${workflowId.value}`, { method: 'PUT', body: payload })
+      await api(`/api/v1/workflows/${workflowId.value}`, { method: 'PUT', body: payload })
     }
   } catch (err: any) {
     saveError.value = err.data?.message || '保存失败'
@@ -138,7 +139,7 @@ async function executeWorkflow() {
   isExecuting.value = true
   executionStatus.value = '正在启动...'
   try {
-    const res = await $fetch(`/api/v1/workflows/${workflowId.value}/execute`, { method: 'POST' })
+    const res = await api(`/api/v1/workflows/${workflowId.value}/execute`, { method: 'POST' })
     const execId = (res as any).data.executionId
     executionId.value = execId
     await pollExecution(execId)
@@ -151,7 +152,13 @@ async function executeWorkflow() {
 }
 
 async function pollExecution(execId: string) {
-  const eventSource = new EventSource(`/api/v1/executions/${execId}/stream`)
+  const token = localStorage.getItem('accessToken')
+  if (!token) {
+    executionStatus.value = '未登录'
+    isExecuting.value = false
+    return
+  }
+  const eventSource = new EventSource(`/api/v1/executions/${execId}/stream?token=${encodeURIComponent(token)}`)
   eventSource.onmessage = (msg) => {
     if (msg.data === '[DONE]') {
       eventSource.close()
@@ -250,32 +257,43 @@ useHead({ title: `${workflowName.value} - 工作流编辑器` })
         </div>
       </div>
 
-      <!-- Canvas -->
+      <!-- Canvas (ClientOnly: Vue Flow requires browser APIs) -->
       <div class="flex-1 relative" @dragover="onDragOver" @drop="onDrop">
-        <VueFlow
-          v-model:nodes="nodes"
-          v-model:edges="edges"
-          :node-types="{ agent: AgentNode }"
-          :default-edge-options="defaultEdgeOptions"
-          :default-viewport="{ zoom: 1, x: 0, y: 0 }"
-          :min-zoom="0.2"
-          :max-zoom="2"
-          :snap-to-grid="true"
-          :snap-grid="[16, 16]"
-          fit-view-on-init
-          class="bg-surface-base"
-        >
-          <Background :gap="16" pattern-color="#E2E8F0" />
-          <Controls position="bottom-right" class="[&>button]:!bg-white [&>button]:!border-ink-muted/20 [&>button]:!rounded-xl" />
-          <MiniMap
-            position="bottom-left"
-            class="!bg-white/80 !backdrop-blur !rounded-2xl !border !border-ink-muted/10 !shadow-card"
-            :pannable="true"
-            :zoomable="true"
-            :node-stroke-color="'#7C3AED'"
-            :node-color="(n: any) => n.data?.color || '#7C3AED'"
-          />
-        </VueFlow>
+        <ClientOnly>
+          <VueFlow
+            id="workflow-editor"
+            v-model:nodes="nodes"
+            v-model:edges="edges"
+            :node-types="{ agent: AgentNode }"
+            :default-edge-options="defaultEdgeOptions"
+            :default-viewport="{ zoom: 1, x: 0, y: 0 }"
+            :min-zoom="0.2"
+            :max-zoom="2"
+            :snap-to-grid="true"
+            :snap-grid="[16, 16]"
+            fit-view-on-init
+            class="bg-surface-base"
+          >
+            <Background :gap="16" pattern-color="#E2E8F0" />
+            <Controls position="bottom-right" class="[&>button]:!bg-white [&>button]:!border-ink-muted/20 [&>button]:!rounded-xl" />
+            <MiniMap
+              position="bottom-left"
+              class="!bg-white/80 !backdrop-blur !rounded-2xl !border !border-ink-muted/10 !shadow-card"
+              :pannable="true"
+              :zoomable="true"
+              :node-stroke-color="'#7C3AED'"
+              :node-color="(n: any) => n.data?.color || '#7C3AED'"
+            />
+          </VueFlow>
+          <template #fallback>
+            <div class="w-full h-full flex items-center justify-center bg-surface-base">
+              <div class="text-center">
+                <div class="w-12 h-12 border-4 border-brand-violet/20 border-t-brand-violet rounded-full animate-spin mx-auto mb-4" />
+                <p class="text-ink-muted">加载编辑器中...</p>
+              </div>
+            </div>
+          </template>
+        </ClientOnly>
 
         <!-- Drop hint -->
         <div v-if="nodes.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none">
