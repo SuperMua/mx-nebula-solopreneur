@@ -1,6 +1,6 @@
 import db from '~/server/utils/db'
-import { agents } from '~/server/db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { agents, reviews, users } from '~/server/db/schema'
+import { eq, sql, desc } from 'drizzle-orm'
 import { renderMarkdown } from '~/server/utils/markdown'
 
 export default defineEventHandler(async (event) => {
@@ -39,11 +39,31 @@ export default defineEventHandler(async (event) => {
 
   const contentHtml = renderMarkdown(agent.contentMd || '')
 
+  // Get recent reviews with user info
+  const recentReviews = await db.select({
+    id: reviews.id,
+    rating: reviews.rating,
+    title: reviews.title,
+    comment: reviews.comment,
+    createdAt: reviews.createdAt,
+    user: {
+      username: users.username,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+    },
+  })
+    .from(reviews)
+    .leftJoin(users, eq(reviews.userId, users.id))
+    .where(eq(reviews.agentId, agent.id))
+    .orderBy(desc(reviews.createdAt))
+    .limit(10)
+
   return {
     success: true,
     data: {
       ...agent,
       contentHtml,
+      reviews: recentReviews,
       related: related.filter(r => r.id !== agent.id).slice(0, 5),
     },
   }

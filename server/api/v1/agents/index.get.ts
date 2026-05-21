@@ -1,6 +1,6 @@
 import db from '~/server/utils/db'
 import { agents } from '~/server/db/schema'
-import { sql, ilike, or, eq, and, desc } from 'drizzle-orm'
+import { sql, ilike, or, eq, and, desc, asc } from 'drizzle-orm'
 import { z } from 'zod'
 
 const querySchema = z.object({
@@ -20,13 +20,12 @@ export default defineEventHandler(async (event) => {
 
   if (query.search) {
     const pattern = `%${query.search}%`
-    conditions.push(
-      or(
-        ilike(agents.name, pattern),
-        ilike(agents.description, pattern),
-        ilike(agents.nameEn || sql`''`, pattern),
-      )!
-    )
+    // Use raw SQL to handle nullable name_en column
+    conditions.push(sql`(
+      ${agents.name} ILIKE ${pattern}
+      OR ${agents.description} ILIKE ${pattern}
+      OR COALESCE(${agents.nameEn}, '') ILIKE ${pattern}
+    )`)
   }
 
   if (query.department) {

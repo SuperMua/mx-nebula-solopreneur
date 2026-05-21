@@ -1,3 +1,7 @@
+<script setup lang="ts">
+const { user, isLoggedIn, logout } = useAuth()
+</script>
+
 <template>
   <div class="flex flex-col min-h-screen">
     <header class="sticky top-0 z-50 border-b border-ink-muted/10 bg-surface-base/80 backdrop-blur-xl">
@@ -23,12 +27,23 @@
           <NuxtLink to="/pricing" class="hidden md:block px-3 py-2 rounded-xl text-sm text-ink-body hover:text-ink-heading hover:bg-white/60 transition-all duration-200">
             定价
           </NuxtLink>
-          <NuxtLink to="/login" class="px-4 py-2 rounded-xl text-sm font-medium text-ink-heading hover:bg-white/60 transition-all duration-200">
-            登录
-          </NuxtLink>
-          <NuxtLink to="/register" class="btn-gradient text-sm px-4 py-2 rounded-xl">
-            免费注册
-          </NuxtLink>
+          <template v-if="isLoggedIn">
+            <NuxtLink to="/dashboard" class="px-3 py-2 rounded-xl text-sm text-ink-body hover:text-ink-heading hover:bg-white/60 transition-all duration-200">
+              仪表盘
+            </NuxtLink>
+            <span class="text-sm text-ink-body hidden md:inline">{{ user?.username }}</span>
+            <button @click="logout" class="px-4 py-2 rounded-xl text-sm font-medium text-ink-heading hover:bg-white/60 transition-all duration-200">
+              退出
+            </button>
+          </template>
+          <template v-else>
+            <NuxtLink to="/login" class="px-4 py-2 rounded-xl text-sm font-medium text-ink-heading hover:bg-white/60 transition-all duration-200">
+              登录
+            </NuxtLink>
+            <NuxtLink to="/register" class="btn-gradient text-sm px-4 py-2 rounded-xl">
+              免费注册
+            </NuxtLink>
+          </template>
         </div>
       </nav>
     </header>

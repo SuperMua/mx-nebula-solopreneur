@@ -117,58 +117,73 @@ function onCopy() {
         <div v-if="activeTab === 'install'" class="bg-white rounded-3xl p-8 shadow-card border border-ink-muted/10">
           <h3 class="font-semibold text-ink-heading text-xl mb-6">安装到你的 AI 工具</h3>
 
-          <div class="space-y-6">
-            <div class="p-5 rounded-2xl bg-surface-base border border-ink-muted/10">
+          <div v-if="!agent.supportedTools || agent.supportedTools.length === 0" class="text-center py-8 text-ink-muted">
+            此 Agent 暂未标注兼容的工具
+          </div>
+
+          <div v-else class="space-y-6">
+            <div
+              v-for="tool in agent.supportedTools"
+              :key="tool"
+              class="p-5 rounded-2xl bg-surface-base border border-ink-muted/10"
+            >
               <h4 class="font-medium text-ink-heading mb-3 flex items-center gap-2">
-                <span class="w-6 h-6 rounded-lg bg-brand-violet/10 flex items-center justify-center text-xs">🟣</span>
-                Claude Code
+                <span class="w-6 h-6 rounded-lg bg-brand-violet/10 flex items-center justify-center text-xs">📦</span>
+                {{ tool }}
               </h4>
-              <pre class="bg-ink-heading text-green-400 text-sm p-4 rounded-xl overflow-x-auto"><code># 下载 Agent 文件
+              <pre class="bg-ink-heading text-green-400 text-sm p-4 rounded-xl overflow-x-auto"><code># 下载 {{ agent.name }} Agent 文件
 curl -o {{ agent.slug }}.md {{ 'https://raw.githubusercontent.com/jnMetaCode/agency-agents-zh/main/' + agent.filePath }}
 
-# 复制到 Claude Code agents 目录
-cp {{ agent.slug }}.md ~/.claude/agents/
-
-# 在 Claude Code 中激活
-# "激活 {{ agent.name }} 模式"</code></pre>
+# 导入到 {{ tool }} 中使用
+# 具体安装方式取决于 {{ tool }} 的 Agent 配置机制
+# 一般将 .md 文件放入对应的 agents/ 目录即可</code></pre>
             </div>
+          </div>
 
-            <div class="p-5 rounded-2xl bg-surface-base border border-ink-muted/10">
-              <h4 class="font-medium text-ink-heading mb-3 flex items-center gap-2">
-                <span class="w-6 h-6 rounded-lg bg-brand-sky/10 flex items-center justify-center text-xs">⬛</span>
-                Cursor
-              </h4>
-              <pre class="bg-ink-heading text-green-400 text-sm p-4 rounded-xl overflow-x-auto"><code># 将以下内容添加到 .cursorrules 或在 Cursor Settings > Rules 中配置
-
-# {{ agent.name }}
-{{ agent.description }}
-
-# 使用 {{ agent.emoji || '' }} {{ agent.name }} 作为 AI 角色</code></pre>
-            </div>
-
-            <div class="p-5 rounded-2xl bg-surface-base border border-ink-muted/10">
-              <h4 class="font-medium text-ink-heading mb-3 flex items-center gap-2">
-                <span class="w-6 h-6 rounded-lg bg-brand-coral/10 flex items-center justify-center text-xs">🐙</span>
-                GitHub Copilot
-              </h4>
-              <pre class="bg-ink-heading text-green-400 text-sm p-4 rounded-xl overflow-x-auto"><code># 在 VS Code 中打开 Copilot Chat，输入：
-/system {{ agent.name }} 角色：{{ agent.description }}
-
-# 或创建 .github/copilot-instructions.md：
-# {{ agent.name }} — {{ agent.description }}</code></pre>
-            </div>
+          <!-- Universal download -->
+          <div class="mt-6 p-5 rounded-2xl bg-gradient-to-r from-brand-violet/5 to-brand-sky/5 border border-brand-violet/10">
+            <h4 class="font-medium text-ink-heading mb-2">📥 通用下载</h4>
+            <p class="text-sm text-ink-muted mb-3">直接下载原始 Markdown 文件，手动导入到任意 AI 工具</p>
+            <a
+              :href="'https://raw.githubusercontent.com/jnMetaCode/agency-agents-zh/main/' + agent.filePath"
+              target="_blank"
+              class="btn-gradient text-sm px-4 py-2 inline-block"
+            >
+              下载 {{ agent.slug }}.md
+            </a>
           </div>
         </div>
 
         <!-- Reviews Tab -->
         <div v-if="activeTab === 'reviews'" class="bg-white rounded-3xl p-8 shadow-card border border-ink-muted/10">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="font-semibold text-ink-heading text-lg">
+              评价
+              <span v-if="agent.ratingCount > 0" class="text-ink-muted font-normal text-sm ml-2">
+                ({{ agent.ratingCount }} 条)
+              </span>
+            </h3>
+            <span v-if="agent.avgRating" class="text-amber-400 font-bold text-lg">★ {{ agent.avgRating }}</span>
+          </div>
           <div v-if="agent.ratingCount === 0" class="text-center py-12">
             <p class="text-5xl mb-3">💬</p>
             <h3 class="text-lg font-semibold text-ink-heading mb-2">暂无评价</h3>
             <p class="text-ink-muted">成为第一个评价此 Agent 的用户</p>
           </div>
-          <div v-else class="text-center py-12">
-            <p class="text-ink-muted">评价列表将在数据库迁移后加载</p>
+          <div v-else class="space-y-4">
+            <div
+              v-for="(review, i) in (agent.reviews || [])"
+              :key="i"
+              class="p-4 rounded-2xl bg-surface-base border border-ink-muted/10"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-medium text-ink-heading text-sm">{{ review.user?.username || '匿名用户' }}</span>
+                <span class="text-amber-400 text-sm">★ {{ review.rating }}</span>
+              </div>
+              <p v-if="review.title" class="font-medium text-ink-body text-sm mb-1">{{ review.title }}</p>
+              <p v-if="review.comment" class="text-sm text-ink-muted">{{ review.comment }}</p>
+              <span class="text-xs text-ink-muted mt-2 block">{{ new Date(review.createdAt).toLocaleDateString('zh-CN') }}</span>
+            </div>
           </div>
         </div>
 
