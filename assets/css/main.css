@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.8);
+    --glass-blur: 20px;
+    --glow-primary: rgba(124, 58, 237, 0.15);
+    --glow-accent: rgba(255, 107, 107, 0.12);
+
+    --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --easing-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  html {
+    font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface-base text-ink-body antialiased;
+    min-height: 100vh;
+  }
+
+  * {
+    @apply border-ink-muted/10;
+  }
+}
+
+@layer components {
+  /* Glass card */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    box-shadow: var(--tw-shadow-glass, 0 8px 32px rgba(124, 58, 237, 0.06)),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  /* Gradient button */
+  .btn-gradient {
+    background: linear-gradient(135deg, #7C3AED, #3B82F6);
+    background-size: 200% 200%;
+    color: white;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 12px 28px;
+    transition: all 0.3s var(--easing-spring);
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.25);
+  }
+
+  .btn-gradient:hover {
+    background-position: 100% 0%;
+    transform: scale(1.02);
+    box-shadow: 0 6px 24px rgba(124, 58, 237, 0.35);
+  }
+
+  .btn-gradient:active {
+    transform: scale(0.98);
+  }
+
+  /* Card with gleam effect on hover */
+  .card-gleam {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-gleam::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  .card-gleam:hover::after {
+    animation: gleam 0.6s ease-in-out;
+  }
+
+  /* Gradient orb */
+  .gradient-orb {
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .gradient-orb--violet {
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.15), transparent 70%);
+  }
+
+  .gradient-orb--sky {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.12), transparent 70%);
+  }
+
+  .gradient-orb--coral {
+    background: radial-gradient(circle, rgba(255, 107, 107, 0.1), transparent 70%);
+  }
+
+  /* Department color tags */
+  .dept-tag {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium;
+    transition: all 0.2s var(--easing-default);
+  }
+
+  .dept-tag--engineering { @apply bg-violet-50 text-violet-600; }
+  .dept-tag--marketing { @apply bg-rose-50 text-rose-600; }
+  .dept-tag--design { @apply bg-amber-50 text-amber-600; }
+  .dept-tag--product { @apply bg-emerald-50 text-emerald-600; }
+  .dept-tag--finance { @apply bg-cyan-50 text-cyan-600; }
+  .dept-tag--game { @apply bg-indigo-50 text-indigo-600; }
+
+  /* Page section spacing */
+  .page-section {
+    @apply py-20 md:py-28 px-4 md:px-8 max-w-7xl mx-auto;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #7C3AED, #3B82F6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

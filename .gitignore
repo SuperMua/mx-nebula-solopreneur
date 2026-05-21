@@ -1,0 +1,16 @@
+node_modules
+.output
+.data
+.nuxt
+dist
+.env
+.env.*
+*.log
+.turbo
+.cache
+coverage
+test-results
+playwright-report
+!.env.example
+Dockerfile
+docker-compose.yml
