@@ -1,6 +1,7 @@
 import db from '~/server/utils/db'
 import { agents } from '~/server/db/schema'
 import { eq, sql } from 'drizzle-orm'
+import { renderMarkdown } from '~/server/utils/markdown'
 
 export default defineEventHandler(async (event) => {
   const slug = getRouterParam(event, 'slug')
@@ -36,10 +37,13 @@ export default defineEventHandler(async (event) => {
     .where(eq(agents.department, agent.department))
     .limit(6)
 
+  const contentHtml = renderMarkdown(agent.contentMd || '')
+
   return {
     success: true,
     data: {
       ...agent,
+      contentHtml,
       related: related.filter(r => r.id !== agent.id).slice(0, 5),
     },
   }

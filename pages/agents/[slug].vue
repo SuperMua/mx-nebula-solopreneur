@@ -109,7 +109,8 @@ function onCopy() {
 
         <!-- Overview Tab -->
         <div v-if="activeTab === 'overview'" class="bg-white rounded-3xl p-8 shadow-card border border-ink-muted/10">
-          <div class="prose prose-lg max-w-none" v-html="agent.contentMd || '暂无内容'"></div>
+          <div v-if="agent.contentHtml" class="prose-content" v-html="agent.contentHtml"></div>
+          <div v-else class="text-center py-12 text-ink-muted">暂无内容</div>
         </div>
 
         <!-- Install Tab -->
